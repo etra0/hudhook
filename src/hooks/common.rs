@@ -3,9 +3,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use imgui::{Context, Io, Key, Ui};
 use parking_lot::MutexGuard;
-use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM, HINSTANCE, BOOL};
 use windows::Win32::UI::Input::KeyboardAndMouse::*;
 use windows::Win32::UI::WindowsAndMessaging::{WHEEL_DELTA, WM_XBUTTONDBLCLK, XBUTTON1, *};
+use windows::Win32::{UI::WindowsAndMessaging::{ShowCursor, SetCursor, LoadCursorW, IDC_APPSTARTING, IDC_WAIT, IDC_ARROW}, System::LibraryLoader::GetModuleHandleW};
 
 use super::dx11::ImguiDx11Hooks;
 use super::dx12::ImguiDx12Hooks;
@@ -55,6 +56,8 @@ pub(crate) trait ImguiWindowsEventHandler {
         io[Key::Z] = VK_Z.0 as _;
     }
 }
+
+static SHOW_CURSOR: AtomicBool = AtomicBool::new(false);
 
 #[must_use]
 pub(crate) fn imgui_wnd_proc_impl<T>(
@@ -126,7 +129,8 @@ where
         WM_CHAR => io.add_input_character(wparam as u8 as char),
         WM_ACTIVATE => {
             *imgui_renderer.focus_mut() = loword(wparam as _) != WA_INACTIVE as u16;
-            return LRESULT(1);
+            println!("this message was received, {}", *imgui_renderer.focus_mut());
+            // return LRESULT(1);
         },
         _ => {},
     };
@@ -137,7 +141,17 @@ where
     drop(imgui_renderer);
 
     if should_block_messages {
-        return LRESULT(1);
+        SHOW_CURSOR.store(true, Ordering::Relaxed);
+        unsafe {
+            SetCursor(LoadCursorW(HINSTANCE(0), IDC_ARROW).unwrap());
+            ShowCursor(BOOL(1));
+        }
+    } else if SHOW_CURSOR.load(Ordering::Relaxed) {
+            unsafe {
+                SetCursor(HCURSOR(0));
+                ShowCursor(BOOL(0));
+            }
+            SHOW_CURSOR.store(false, Ordering::Relaxed);
     }
 
     unsafe { CallWindowProcW(Some(wnd_proc), hwnd, umsg, WPARAM(wparam), LPARAM(lparam)) }
