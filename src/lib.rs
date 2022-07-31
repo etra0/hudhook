@@ -140,7 +140,7 @@ pub mod utils {
         use simplelog::*;
 
         TermLogger::init(
-            LevelFilter::Trace,
+            LevelFilter::Debug,
             Config::default(),
             TerminalMode::Mixed,
             ColorChoice::Auto,
