@@ -134,17 +134,17 @@ where
     drop(imgui_renderer);
 
     if should_block_messages {
-        SHOW_CURSOR.store(true, Ordering::Relaxed);
+        SHOW_CURSOR.store(true, Ordering::SeqCst);
         unsafe {
             SetCursor(LoadCursorW(HINSTANCE(0), IDC_ARROW).unwrap());
             ShowCursor(BOOL(1));
         }
-    } else if SHOW_CURSOR.load(Ordering::Relaxed) {
+    } else if SHOW_CURSOR.load(Ordering::SeqCst) {
             unsafe {
                 SetCursor(HCURSOR(0));
                 ShowCursor(BOOL(0));
             }
-            SHOW_CURSOR.store(false, Ordering::Relaxed);
+            SHOW_CURSOR.store(false, Ordering::SeqCst);
     }
 
     unsafe { CallWindowProcW(Some(wnd_proc), hwnd, umsg, WPARAM(wparam), LPARAM(lparam)) }
