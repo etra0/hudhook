@@ -203,24 +203,21 @@ pub mod utils {
 ///
 /// [`eject`]: lifecycle::eject
 pub mod lifecycle {
-
-    use std::thread;
-
     use windows::Win32::System::LibraryLoader::FreeLibraryAndExitThread;
 
     /// Disable hooks and eject the DLL.
-    pub fn eject() {
-        thread::spawn(|| unsafe {
-            crate::utils::free_console();
+    pub unsafe fn eject() -> ! {
+        crate::utils::free_console();
 
-            if let Some(mut hooks) = global_state::HOOKS.take() {
-                hooks.unhook();
-            }
+        if let Some(mut hooks) = global_state::HOOKS.take() {
+            hooks.unhook();
+        }
 
-            if let Some(module) = global_state::MODULE.take() {
-                FreeLibraryAndExitThread(module, 0);
-            }
-        });
+        if let Some(module) = global_state::MODULE.take() {
+            FreeLibraryAndExitThread(module, 0);
+        }
+
+        unreachable!("The code was not removed correctly so anything can happen from here.");
     }
 
     /// Exposes functions that store and manipulate global state data.
