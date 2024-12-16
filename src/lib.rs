@@ -113,6 +113,7 @@
 //! }
 //! ```
 #![allow(clippy::needless_doctest_main)]
+#![feature(lazy_cell)]
 
 mod mh;
 
